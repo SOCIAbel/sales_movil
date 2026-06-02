@@ -17,6 +17,15 @@ class ClientProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> loadSynced() async {
+    final rows = await _db.queryAll();
+    _clients = rows
+        .map((row) => Client.fromMap(row))
+        .where((c) => c.serverId != null)
+        .toList();
+    notifyListeners();
+  }
+
   Future<void> save(Client client) async {
     await _db.insert(client.toMap());
     await loadAll();
@@ -51,7 +60,6 @@ class ClientProvider extends ChangeNotifier {
 
     for (final client in pending) {
       if (client.serverId == null) {
-        // Cliente nuevo — POST
         final (result, serverId) = await _service.save(client);
         if (result == SyncResult.created && serverId != null) {
           await _db.updateSynced(client.id, serverId);
@@ -62,7 +70,6 @@ class ClientProvider extends ChangeNotifier {
           errores++;
         }
       } else {
-        // Cliente editado — PUT
         final result = await _service.edit(client);
         if (result == SyncResult.updated) {
           await _db.updateSyncedOnly(client.id);

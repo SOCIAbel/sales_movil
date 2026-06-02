@@ -13,8 +13,8 @@ class SaleProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> save(int clientId, int productId, int quantity) async {
-    await _service.save(clientId, productId, quantity);
+  Future<void> save(int clientId, List<Map<String, dynamic>> details) async {
+    await _service.save(clientId, details);
     await loadAll();
   }
 }

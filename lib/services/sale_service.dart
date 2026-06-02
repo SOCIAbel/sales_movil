@@ -17,13 +17,11 @@ class SaleService {
     }
   }
 
-  Future<void> save(int clientId, int productId, int quantity) async {
+  Future<void> save(int clientId, List<Map<String, dynamic>> details) async {
     var url = Uri.http(apiUrl, '/sale/sales/');
     var body = convert.jsonEncode({
       'client': clientId,
-      'details': [
-        {'product': productId, 'quantity': quantity}
-      ]
+      'details': details,
     });
     var response = await http.post(
       url,
