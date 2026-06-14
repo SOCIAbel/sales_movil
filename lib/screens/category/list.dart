@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:sales/providers/category_provider.dart';
-import 'package:sales/screens/category/detail.dart';
-import 'package:sales/screens/category/form.dart';
 
 class CategoryListScreen extends StatefulWidget {
   const CategoryListScreen({super.key});
@@ -12,7 +11,6 @@ class CategoryListScreen extends StatefulWidget {
 }
 
 class _CategoryListScreenState extends State<CategoryListScreen> {
-
   @override
   void initState() {
     super.initState();
@@ -23,41 +21,28 @@ class _CategoryListScreenState extends State<CategoryListScreen> {
   Widget build(BuildContext context) {
     final categories = context.watch<CategoryProvider>().categories;
 
+    // Scaffold sin AppBar — AppShell provee el AppBar.
+    // El Scaffold aquí existe solo para el FloatingActionButton.
     return Scaffold(
-      appBar: AppBar(
-        title: Text("Lista de Categorias"),
-        backgroundColor: Colors.orange,
+      floatingActionButton: FloatingActionButton(
+        // context.push apila /categories/form — aparece botón atrás
+        onPressed: () => context.push('/categories/form'),
+        child: const Icon(Icons.add),
       ),
-      floatingActionButton: ElevatedButton(
-        onPressed: () async {
-          await Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => CategoryFormScreen()),
-          );
-          context.read<CategoryProvider>().loadAll();
-        },
-        child: Icon(Icons.add),
-      ),
-      body: ListView.builder(
-        itemCount: categories.length,
-        itemBuilder: (context, index) {
-          return ListTile(
-            title: Text(categories[index].name),
-            subtitle: Text(categories[index].description),
-            onTap: () async {
-              await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => CategoryDetailScreen(
-                    idCategory: categories[index].id,
-                  ),
-                ),
-              );
-              context.read<CategoryProvider>().loadAll();
-            },
-          );
-        },
-      ),
+      body: categories.isEmpty
+          ? const Center(child: CircularProgressIndicator())
+          : ListView.builder(
+              itemCount: categories.length,
+              itemBuilder: (context, index) {
+                final cat = categories[index];
+                return ListTile(
+                  title: Text(cat.name),
+                  subtitle: Text(cat.description),
+                  // El id viaja en la URL — /categories/5
+                  onTap: () => context.push('/categories/${cat.id}'),
+                );
+              },
+            ),
     );
   }
 }

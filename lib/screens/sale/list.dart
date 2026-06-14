@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:sales/models/sale.dart';
 import 'package:sales/providers/sale_provider.dart';
-import 'package:sales/screens/sale/form.dart';
 
 class SaleListScreen extends StatefulWidget {
   const SaleListScreen({super.key});
@@ -117,74 +117,76 @@ class _SaleListScreenState extends State<SaleListScreen> {
       return matchSearch && matchDate;
     }).toList();
 
+    // Scaffold sin AppBar — AppShell provee el AppBar.
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Ventas'),
+      floatingActionButton: FloatingActionButton(
         backgroundColor: Colors.green,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.calendar_month),
-            onPressed: () async {
-              final picked = await showDatePicker(
-                context: context,
-                initialDate: DateTime.now(),
-                firstDate: DateTime(2020),
-                lastDate: DateTime(2030),
-              );
-              setState(() => _filterDate = picked);
-            },
-          ),
-          if (_filterDate != null)
-            IconButton(
-              icon: const Icon(Icons.clear),
-              onPressed: () => setState(() => _filterDate = null),
-            ),
-        ],
-      ),
-      floatingActionButton: ElevatedButton(
-        onPressed: () async {
-          await Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const SaleFormScreen()),
-          );
-          context.read<SaleProvider>().loadAll();
-        },
+        onPressed: () => context.push('/sales/form'),
         child: const Icon(Icons.add),
       ),
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.all(10),
-            child: TextField(
-              decoration: InputDecoration(
-                hintText: 'Buscar por cliente o # venta...',
-                prefixIcon: const Icon(Icons.search, color: Colors.green),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+            padding: const EdgeInsets.fromLTRB(10, 10, 10, 0),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    decoration: InputDecoration(
+                      hintText: 'Buscar por cliente o # venta...',
+                      prefixIcon: const Icon(Icons.search, color: Colors.green),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: Colors.green),
+                      ),
+                    ),
+                    onChanged: (val) => setState(() => _search = val),
+                  ),
                 ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Colors.green),
+                const SizedBox(width: 6),
+                // Filtro de fecha — movido del AppBar al body porque
+                // AppShell centraliza un único AppBar sin actions por pantalla.
+                IconButton(
+                  icon: const Icon(Icons.calendar_month, color: Colors.green),
+                  onPressed: () async {
+                    final picked = await showDatePicker(
+                      context: context,
+                      initialDate: DateTime.now(),
+                      firstDate: DateTime(2020),
+                      lastDate: DateTime(2030),
+                    );
+                    setState(() => _filterDate = picked);
+                  },
                 ),
-              ),
-              onChanged: (val) => setState(() => _search = val),
+                if (_filterDate != null)
+                  IconButton(
+                    icon: const Icon(Icons.clear),
+                    onPressed: () => setState(() => _filterDate = null),
+                  ),
+              ],
             ),
           ),
           if (_filterDate != null)
             Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Chip(
-                label: Text(
-                    'Fecha: ${_filterDate!.day}/${_filterDate!.month}/${_filterDate!.year}'),
-                deleteIcon: const Icon(Icons.close, size: 16),
-                onDeleted: () => setState(() => _filterDate = null),
+              padding: const EdgeInsets.fromLTRB(10, 8, 10, 0),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Chip(
+                  label: Text(
+                      'Fecha: ${_filterDate!.day}/${_filterDate!.month}/${_filterDate!.year}'),
+                  deleteIcon: const Icon(Icons.close, size: 16),
+                  onDeleted: () => setState(() => _filterDate = null),
+                ),
               ),
             ),
           Expanded(
             child: sales.isEmpty
                 ? const Center(child: Text('No hay ventas'))
                 : ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 10),
+              padding: const EdgeInsets.all(10),
               itemCount: sales.length,
               itemBuilder: (context, index) {
                 final sale = sales[index];

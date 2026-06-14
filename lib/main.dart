@@ -3,9 +3,9 @@ import 'package:provider/provider.dart';
 import 'package:sales/providers/category_provider.dart';
 import 'package:sales/providers/client_provider.dart';
 import 'package:sales/providers/product_provider.dart';
-import 'package:sales/providers/supplier_provider.dart';
 import 'package:sales/providers/sale_provider.dart';
-import 'package:sales/screens/main_screen.dart';
+import 'package:sales/providers/supplier_provider.dart';
+import 'package:sales/router/app_router.dart'; // ← importar el router
 
 void main() {
   runApp(const MyApp());
@@ -18,15 +18,21 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (context) => CategoryProvider()),
-        ChangeNotifierProvider(create: (context) => ProductProvider()),
-        ChangeNotifierProvider(create: (context) => ClientProvider()),
-        ChangeNotifierProvider(create: (context) => SupplierProvider()),
-        ChangeNotifierProvider(create: (context) => SaleProvider()),
+        // Los Providers no cambian — siguen registrados aquí.
+        // Todas las rutas de go_router tienen acceso a ellos
+        // porque el MultiProvider envuelve al MaterialApp.router.
+        ChangeNotifierProvider(create: (_) => CategoryProvider()),
+        ChangeNotifierProvider(create: (_) => ProductProvider()),
+        ChangeNotifierProvider(create: (_) => ClientProvider()),
+        ChangeNotifierProvider(create: (_) => SupplierProvider()),
+        ChangeNotifierProvider(create: (_) => SaleProvider()),
       ],
-      child: MaterialApp(
+      // MaterialApp.router en lugar de MaterialApp.
+      // routerConfig recibe la instancia de GoRouter definida en app_router.dart.
+      // Ya no se usa home: — el router define la pantalla inicial con initialLocation.
+      child: MaterialApp.router(
         debugShowCheckedModeBanner: false,
-        home: MainScreen(),
+        routerConfig: appRouter,
       ),
     );
   }

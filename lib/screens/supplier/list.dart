@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:sales/providers/supplier_provider.dart';
-import 'package:sales/screens/supplier/form.dart';
 
 class SupplierListScreen extends StatefulWidget {
   const SupplierListScreen({super.key});
@@ -11,10 +11,22 @@ class SupplierListScreen extends StatefulWidget {
 }
 
 class _SupplierListScreenState extends State<SupplierListScreen> {
+  bool _syncing = false;
+
   @override
   void initState() {
     super.initState();
     context.read<SupplierProvider>().loadAll();
+  }
+
+  Future<void> _sincronizar() async {
+    setState(() => _syncing = true);
+    await context.read<SupplierProvider>().sincronizar();
+    if (!mounted) return;
+    setState(() => _syncing = false);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Sincronización completada')),
+    );
   }
 
   void _verDetalle(BuildContext context, dynamic s) {
@@ -72,15 +84,9 @@ class _SupplierListScreenState extends State<SupplierListScreen> {
                     child: OutlinedButton.icon(
                       icon: const Icon(Icons.edit),
                       label: const Text('Editar'),
-                      onPressed: () async {
-                        Navigator.pop(context);
-                        await Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => SupplierFormScreen(supplier: s),
-                          ),
-                        );
-                        context.read<SupplierProvider>().loadAll();
+                      onPressed: () {
+                        context.pop();
+                        context.push('/suppliers/form', extra: s);
                       },
                     ),
                   ),
@@ -93,7 +99,7 @@ class _SupplierListScreenState extends State<SupplierListScreen> {
                       style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.red),
                       onPressed: () async {
-                        Navigator.pop(context);
+                        context.pop();
                         final confirm = await showDialog<bool>(
                           context: context,
                           builder: (_) => AlertDialog(
@@ -101,13 +107,11 @@ class _SupplierListScreenState extends State<SupplierListScreen> {
                             content: Text('¿Eliminar a ${s.nombre}?'),
                             actions: [
                               TextButton(
-                                onPressed: () =>
-                                    Navigator.pop(context, false),
+                                onPressed: () => context.pop(false),
                                 child: const Text('Cancelar'),
                               ),
                               TextButton(
-                                onPressed: () =>
-                                    Navigator.pop(context, true),
+                                onPressed: () => context.pop(true),
                                 child: const Text('Eliminar'),
                               ),
                             ],
@@ -137,33 +141,32 @@ class _SupplierListScreenState extends State<SupplierListScreen> {
   Widget build(BuildContext context) {
     final suppliers = context.watch<SupplierProvider>().suppliers;
 
-    //por si me olvido xd
-
+    // Scaffold sin AppBar — AppShell provee el AppBar.
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Proveedores'),
-        backgroundColor: Colors.blue,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.sync),
-            onPressed: () async {
-              await context.read<SupplierProvider>().sincronizar();
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Sincronización completada')),
-              );
-            },
+      // Dos FABs en Column — sync y agregar, igual que en clientes.
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          FloatingActionButton(
+            heroTag: 'sync',
+            onPressed: _syncing ? null : _sincronizar,
+            backgroundColor: Colors.blue,
+            child: _syncing
+                ? const SizedBox(
+                    width: 20, height: 20,
+                    child: CircularProgressIndicator(
+                      color: Colors.white, strokeWidth: 2,
+                    ),
+                  )
+                : const Icon(Icons.sync),
+          ),
+          const SizedBox(height: 10),
+          FloatingActionButton(
+            heroTag: 'add',
+            onPressed: () => context.push('/suppliers/form'),
+            child: const Icon(Icons.add),
           ),
         ],
-      ),
-      floatingActionButton: ElevatedButton(
-        onPressed: () async {
-          await Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const SupplierFormScreen()),
-          );
-          context.read<SupplierProvider>().loadAll();
-        },
-        child: const Icon(Icons.add),
       ),
       body: suppliers.isEmpty
           ? const Center(child: Text('No hay proveedores'))
